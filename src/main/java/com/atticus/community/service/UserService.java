@@ -2,6 +2,7 @@ package com.atticus.community.service;
 
 import com.atticus.community.dao.UserMapper;
 import com.atticus.community.entity.User;
+import com.atticus.community.util.CommunityConstant;
 import com.atticus.community.util.CommunityUtil;
 import com.atticus.community.util.MailClient;
 import org.apache.commons.lang3.StringUtils;
@@ -17,7 +18,7 @@ import java.util.Map;
 import java.util.Random;
 
 @Service
-public class UserService {
+public class UserService implements CommunityConstant {
 
     private UserMapper userMapper;
 
@@ -97,7 +98,7 @@ public class UserService {
         // 激活邮件
         Context context = new Context();
         context.setVariable("email", user.getEmail());
-        // http://localhost:8080/community/activation/101/code
+        // http://localhost:8080/community/activation/userId/code
         String url = domain + contextPath + "/activation/" + user.getId() + "/" + user.getActivationCode();
         context.setVariable("url", url);
         String content = templateEngine.process("/mail/activation", context);
@@ -105,4 +106,17 @@ public class UserService {
 
         return map;
     }
+
+    public int activation(int userId, String code) {
+        User user = userMapper.selectById(userId);
+        if (user.getStatus() == 1) {
+            return ACTIVATION_REPEAT;
+        } else if (user.getActivationCode().equals(code)) {
+            userMapper.updateStatus(userId, 1);
+            return ACTIVATION_SUCCESS;
+        } else {
+            return ACTIVATION_FAILURE;
+        }
+    }
+
 }
